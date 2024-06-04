@@ -1,27 +1,23 @@
-const express = require('express');
-require('dotenv').config();
-const workoutRoutes = require('./routes/workouts');
+require('dotenv').config()
 
+const express = require('express')
+const workoutRoutes = require('./routes/workouts')
 
 // express app
-const app = express();
-//midleware
-app.use(express.json());
+const app = express()
 
+// middleware
+app.use(express.json())
 
 app.use((req, res, next) => {
-    console.log(req.path, req.method);
-    next();
+  console.log(req.path, req.method)
+  next()
 })
 
-//routes
-// app.get('/', (req, res) => {
-//     res.json({msg: 'Welcome de the app'})
-// })
+// routes
+app.use('/api/workouts', workoutRoutes)
 
-app.use('api/workouts',workoutRoutes);
-
-//listen for requests
+// listen for requests
 app.listen(process.env.PORT, () => {
-    console.log('listenning on port 4000')
+  console.log('listening on port', process.env.PORT)
 })
