@@ -7,6 +7,10 @@ variable "location" {
   type        = string
   description = "Resources location in Azure"
 }
+variable "location1" {
+  type        = string
+  description = "Resources location in Azure FOR AKS"
+}
 
 variable "cluster_name" {
   type        = string

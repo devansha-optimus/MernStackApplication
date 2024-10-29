@@ -1,6 +1,6 @@
-output "mongodb_connection_string" {
+/*output "mongodb_connection_string" {
   value = "mongodb://${azurerm_cosmosdb_account.mongodb.name}.mongo.cosmos.azure.com:10255/mydatabase?ssl=true&replicaSet=globaldb"
-}
+}*/
 
 output "aks_id" {
   value = azurerm_kubernetes_cluster.aks.id
