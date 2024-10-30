@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: <acr_name>.azurecr.io/frontend:<tag>
+          image: acrterraformunique123.azurecr.io/react_frontend:latest
           ports:
             - containerPort: 3000
           env:
