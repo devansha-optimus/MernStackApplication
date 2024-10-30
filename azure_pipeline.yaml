@@ -1,0 +1,71 @@
+trigger:
+  - main
+
+pool:
+  name: DEVPOOL
+  demands:
+    - agent.name -equals Agent-1
+
+stages:
+  - stage: Build_and_Publish
+    jobs:
+      - job: frontend_build
+        displayName: 'Build Frontend'
+        steps:
+          - task: UseNode@1
+            inputs:
+              versionSpec: '16.x'
+          - script: cd frontend && npm ci
+            displayName: 'Install Frontend Dependencies'
+          - task: Npm@1
+            inputs:
+              command: 'publish'
+              workingDir: 'frontend'
+              publishRegistry: 'useFeed'
+              publishFeed: 'c73bed70-6f20-47d6-a23d-1ad6f8459d60/3746fcfb-169a-4c21-a5b6-e3ef15672a55'
+
+      - job: backend_build
+        displayName: 'Build Backend'
+        steps:
+          - task: UseNode@1
+            inputs:
+              versionSpec: '16.x'
+          - script: cd backend && npm ci
+            displayName: 'Install Backend Dependencies'
+
+          - task: Npm@1
+            inputs:
+              command: 'publish'
+              workingDir: 'backend'
+              publishRegistry: 'useFeed'
+              publishFeed: 'c73bed70-6f20-47d6-a23d-1ad6f8459d60/3746fcfb-169a-4c21-a5b6-e3ef15672a55'
+
+  - stage: Trivy_FS_Scan
+    displayName: 'Trivy FS Scan Frontend & Backend'
+    jobs:
+      - job: trivy_fs_scan_frontend
+        displayName: 'Trivy FS Scan Frontend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                cd frontend
+                trivy fs --format table -o trivy-frontend.html .
+          - task: PublishPipelineArtifact@1
+            inputs:
+              artifactName: 'frontend-report'
+              targetPath: 'frontend/trivy-frontend.html'      
+
+      - job: trivy_fs_scan_backend
+        displayName: 'Trivy FS Scan Backend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                cd backend
+                trivy fs --format table -o trivy-backend.html .
+                
+          - task: PublishPipelineArtifact@1
+            inputs:
+              artifactName: 'frontend-report'
+              targetPath: 'frontend/trivy-frontend.html'      

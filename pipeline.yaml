@@ -1,0 +1,144 @@
+trigger:
+  - main
+
+pool:
+  name: DEVPOOL
+  demands:
+    - agent.name -equals Agent-1
+
+stages:
+  - stage: Build_and_Publish
+    jobs:
+      - job: frontend_build
+        displayName: 'Build Frontend'
+        steps:
+          - task: UseNode@1
+            inputs:
+              versionSpec: '22.x'
+          - script: node -v
+            displayName: 'Check Node.js Version'    
+          - script: cd frontend && npm install
+            displayName: 'Install Frontend Dependencies'
+    
+      - job: backend_build
+        displayName: 'Build Backend'
+        steps:
+          - task: UseNode@1
+            inputs:
+              versionSpec: '22.x'
+          - script: cd backend && npm install
+            displayName: 'Install Backend Dependencies'
+
+  - stage: Trivy_FS_Scan
+    displayName: 'Trivy FS Scan Frontend & Backend'
+    jobs:
+      - job: trivy_fs_scan_frontend
+        displayName: 'Trivy FS Scan Frontend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                cd frontend
+                trivy fs --format table -o trivy-frontend.html .
+          - task: PublishPipelineArtifact@1
+            inputs:
+              artifactName: 'frontend-report'
+              targetPath: 'frontend/trivy-frontend.html'      
+
+      - job: trivy_fs_scan_backend
+        displayName: 'Trivy FS Scan Backend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                cd backend
+                trivy fs --format table -o trivy-backend.html .
+          - task: PublishPipelineArtifact@1
+            inputs:
+              artifactName: 'backend-report'
+              targetPath: 'backend/trivy-backend.html'
+
+  - stage: SonarQube_Frontend
+    displayName: 'Sonar Analysis for Frontend'
+    jobs:
+      - job: sonarqube_analysis_Frontend
+        steps:
+          - task: SonarQubePrepare@7
+            inputs:
+              SonarQube: 'sonar_svc'
+              scannerMode: 'cli'
+              configMode: 'manual'
+              cliProjectKey: 'devops_frontend'
+              cliProjectName: 'devops_frontend'
+              cliSources: './frontend'
+          - task: SonarQubeAnalyze@7
+            inputs:
+              jdkversion: 'JAVA_HOME_17_X64'
+              
+  - stage: SonarQube_Backend
+    displayName: 'Sonar Analysis for Backend'
+    jobs:
+      - job: sonarqube_analysis_Backend
+        steps:
+          - task: SonarQubePrepare@7
+            inputs:
+              SonarQube: 'sonar_svc'
+              scannerMode: 'cli'
+              configMode: 'manual'
+              cliProjectKey: 'devops_backend'
+              cliProjectName: 'devops_backend'
+              cliSources: './backend'
+          - task: SonarQubeAnalyze@7
+            inputs:
+              jdkversion: 'JAVA_HOME_17_X64'
+  
+  - stage: Docker_Build_backend
+    displayName: 'Docker Build backend'    
+    jobs:
+      - job: docker_build
+        displayName: 'Docker Build backend'
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'docker-svc'
+              repository: 'react_backend'
+              command: 'build'
+              Dockerfile: 'backend/Dockerfile'
+              tags: latest
+
+  - stage: Trivy_Image_Scan_Backend
+    displayName: 'Trivy Image Scan  Backend'
+    jobs:
+      - job: trivy_Image_scan_Backend
+        displayName: 'Trivy Image Scan  Backend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                trivy image --format table -o image-backend.html acrterraformunique123.azurecr.io\react_backend:latest
+              
+
+  - stage: Docker_Build_frontend
+    displayName: 'Docker Build frontend'    
+    jobs:
+      - job: docker_build
+        displayName: 'Docker Build frontend'
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'docker-svc'
+              repository: 'react_frontend'
+              command: 'build'
+              Dockerfile: 'frontend/Dockerfile'
+              tags: latest
+  - stage: Trivy_Image_Scan_frontend
+    displayName: 'Trivy Image Scan  frontend'
+    jobs:
+      - job: trivy_Image_scan_frontend
+        displayName: 'Trivy Image Scan  frontend'
+        steps:
+          - task: CmdLine@2
+            inputs:
+              script: |
+                trivy image --format table -o image-backend.html acrterraformunique123.azurecr.io\react_frontend:latest
+                          
