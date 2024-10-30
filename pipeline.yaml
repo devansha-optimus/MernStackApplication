@@ -92,53 +92,45 @@ stages:
             inputs:
               jdkversion: 'JAVA_HOME_17_X64'
   
-  - stage: Docker_Build_backend
-    displayName: 'Docker Build backend'    
+  - stage: Docker_Build_push_backend
+    displayName: 'Docker Build and push backend'    
     jobs:
-      - job: docker_build
-        displayName: 'Docker Build backend'
+      - job: docker_build_push
+        displayName: 'Docker Build and push backend'
         steps:
           - task: Docker@2
             inputs:
               containerRegistry: 'docker-svc'
               repository: 'react_backend'
-              command: 'build'
+              command: 'buildAndPush'
               Dockerfile: 'backend/Dockerfile'
               tags: latest
 
-  - stage: Trivy_Image_Scan_Backend
-    displayName: 'Trivy Image Scan  Backend'
+  - stage: Docker_Build_push_frontend
+    displayName: 'Docker Build and push frontend'    
     jobs:
-      - job: trivy_Image_scan_Backend
-        displayName: 'Trivy Image Scan  Backend'
-        steps:
-          - task: CmdLine@2
-            inputs:
-              script: |
-                trivy image --format table -o image-backend.html acrterraformunique123.azurecr.io\react_backend:latest
-              
-
-  - stage: Docker_Build_frontend
-    displayName: 'Docker Build frontend'    
-    jobs:
-      - job: docker_build
-        displayName: 'Docker Build frontend'
+      - job: docker_build_push
+        displayName: 'Docker Build and push frontend'
         steps:
           - task: Docker@2
             inputs:
               containerRegistry: 'docker-svc'
               repository: 'react_frontend'
-              command: 'build'
+              command: 'buildAndPush'
               Dockerfile: 'frontend/Dockerfile'
               tags: latest
-  - stage: Trivy_Image_Scan_frontend
-    displayName: 'Trivy Image Scan  frontend'
+
+  - stage: deploy_to_aks
+    displayName: 'deploy to aks'    
     jobs:
-      - job: trivy_Image_scan_frontend
-        displayName: 'Trivy Image Scan  frontend'
+      - job: deploy_to_aks
+        displayName: 'deploy to aks'
         steps:
-          - task: CmdLine@2
+          - task: KubernetesManifest@1
             inputs:
-              script: |
-                trivy image --format table -o image-backend.html acrterraformunique123.azurecr.io\react_frontend:latest
-                          
+              action: 'deploy'
+              connectionType: 'kubernetesServiceConnection'
+              kubernetesServiceConnection: 'k8s'
+              namespace: 'default'
+              manifests: 'k8s/*.yaml'
+          
