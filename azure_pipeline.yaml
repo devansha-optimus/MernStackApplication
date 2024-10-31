@@ -14,8 +14,8 @@ stages:
         steps:
           - task: UseNode@1
             inputs:
-              versionSpec: '16.x'
-          - script: cd frontend && npm ci
+              versionSpec: '22.x'
+          - script: cd frontend && npm install
             displayName: 'Install Frontend Dependencies'
           - task: Npm@1
             inputs:
@@ -29,8 +29,8 @@ stages:
         steps:
           - task: UseNode@1
             inputs:
-              versionSpec: '16.x'
-          - script: cd backend && npm ci
+              versionSpec: '22.x'
+          - script: cd backend && npm install
             displayName: 'Install Backend Dependencies'
 
           - task: Npm@1
@@ -39,6 +39,7 @@ stages:
               workingDir: 'backend'
               publishRegistry: 'useFeed'
               publishFeed: 'c73bed70-6f20-47d6-a23d-1ad6f8459d60/3746fcfb-169a-4c21-a5b6-e3ef15672a55'
+
 
   - stage: Trivy_FS_Scan
     displayName: 'Trivy FS Scan Frontend & Backend'
@@ -64,8 +65,84 @@ stages:
               script: |
                 cd backend
                 trivy fs --format table -o trivy-backend.html .
-                
           - task: PublishPipelineArtifact@1
             inputs:
-              artifactName: 'frontend-report'
-              targetPath: 'frontend/trivy-frontend.html'      
+              artifactName: 'backend-report'
+              targetPath: 'backend/trivy-backend.html'
+
+  - stage: SonarQube_Frontend
+    displayName: 'Sonar Analysis for Frontend'
+    jobs:
+      - job: sonarqube_analysis_Frontend
+        steps:
+          - task: SonarQubePrepare@7
+            inputs:
+              SonarQube: 'sonar_svc'
+              scannerMode: 'cli'
+              configMode: 'manual'
+              cliProjectKey: 'devops_frontend'
+              cliProjectName: 'devops_frontend'
+              cliSources: './frontend'
+          - task: SonarQubeAnalyze@7
+            inputs:
+              jdkversion: 'JAVA_HOME_17_X64'
+              
+  - stage: SonarQube_Backend
+    displayName: 'Sonar Analysis for Backend'
+    jobs:
+      - job: sonarqube_analysis_Backend
+        steps:
+          - task: SonarQubePrepare@7
+            inputs:
+              SonarQube: 'sonar_svc'
+              scannerMode: 'cli'
+              configMode: 'manual'
+              cliProjectKey: 'devops_backend'
+              cliProjectName: 'devops_backend'
+              cliSources: './backend'
+          - task: SonarQubeAnalyze@7
+            inputs:
+              jdkversion: 'JAVA_HOME_17_X64'
+  
+  - stage: Docker_Build_push_backend
+    displayName: 'Docker Build and push backend'    
+    jobs:
+      - job: docker_build_push
+        displayName: 'Docker Build and push backend'
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'docker-svc'
+              repository: 'react_backend'
+              command: 'buildAndPush'
+              Dockerfile: 'backend/Dockerfile'
+              tags: latest
+
+  - stage: Docker_Build_push_frontend
+    displayName: 'Docker Build and push frontend'    
+    jobs:
+      - job: docker_build_push
+        displayName: 'Docker Build and push frontend'
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'docker-svc'
+              repository: 'react_frontend'
+              command: 'buildAndPush'
+              Dockerfile: 'frontend/Dockerfile'
+              tags: latest
+
+  - stage: deploy_to_aks
+    displayName: 'deploy to aks'    
+    jobs:
+      - job: deploy_to_aks
+        displayName: 'deploy to aks'
+        steps:
+          - task: KubernetesManifest@1
+            inputs:
+              action: 'deploy'
+              connectionType: 'kubernetesServiceConnection'
+              kubernetesServiceConnection: 'k8s'
+              namespace: 'default'
+              manifests: 'k8s/*.yaml'
+          
