@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: acrterraformunique123.azurecr.io/react_backend:latest
+          image: acrrr.azurecr.io/react_backend:latest
           ports:
             - containerPort: 4000
           env:
