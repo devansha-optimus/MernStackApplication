@@ -18,7 +18,7 @@ stages:
           - task: Npm@1
             inputs:
               command: 'publish'
-              workingDir: 'frontend'
+              workingDir: './frontend'
               publishRegistry: 'useFeed'
               publishFeed: 'c73bed70-6f20-47d6-a23d-1ad6f8459d60/3746fcfb-169a-4c21-a5b6-e3ef15672a55'
 
@@ -34,7 +34,7 @@ stages:
           - task: Npm@1
             inputs:
               command: 'publish'
-              workingDir: 'backend'
+              workingDir: './backend'
               publishRegistry: 'useFeed'
               publishFeed: 'c73bed70-6f20-47d6-a23d-1ad6f8459d60/3746fcfb-169a-4c21-a5b6-e3ef15672a55'
 
