@@ -1,4 +1,5 @@
-version: '3'
+version: '3.8'  # Updated version
+
 services:
   frontend:
     build: ./frontend
@@ -12,5 +13,4 @@ services:
     ports:
       - '${PORT}:${PORT}'
     env_file:
-      - .env
-      
+      - .env  # Ensure the .env file exists or use environment variables directly
