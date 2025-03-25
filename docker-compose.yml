@@ -1,5 +1,3 @@
-version: '3.8'  # Updated version
-
 services:
   frontend:
     build: ./frontend
