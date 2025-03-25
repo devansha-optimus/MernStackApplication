@@ -13,4 +13,4 @@ services:
     ports:
       - '${PORT}:${PORT}'
     env_file:
-      - .env  # Ensure the .env file exists or use environment variables directly
+      - ./backend/.env  # Ensure the .env file exists or use environment variables directly
